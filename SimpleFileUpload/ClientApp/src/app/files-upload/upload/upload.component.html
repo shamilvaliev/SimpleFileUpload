@@ -1,0 +1,8 @@
+<div>
+   <app-upload-input (onSuccessUploaded)="onSuccessUploaded($event)"></app-upload-input>
+    <div>
+        <div>
+            <app-file-group *ngFor="let item of fileGroups" [fileGroup]="item"></app-file-group>
+        </div>
+    </div>
+</div>
