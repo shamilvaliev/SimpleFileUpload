@@ -8,6 +8,7 @@ import {
 
 import { Subject } from 'rxjs';
 import { Observable } from 'rxjs';
+import { FileUploadResult } from './models/file-upload-result';
 
 import { Group } from './models/group';
 
@@ -18,10 +19,12 @@ const url = 'http://localhost:3510/api/files'
 })
 export class UploadService {
 
+    lastResult: string;
     constructor(private http: HttpClient) { }
 
     public upload(
-        files: Set<File>
+        files: Set<File>,
+        onCompleteCallback: (result: FileUploadResult[]) => any
     ): { [key: string]: { progress: Observable<number> } } {
 
         // this will be the our resulting map
@@ -51,7 +54,10 @@ export class UploadService {
                     // pass the percentage into the progress-stream
                     progress.next(percentDone);
                 } else if (event instanceof HttpResponse) {
-
+                    let obj: FileUploadResult[] = [];
+                    var res = Object.assign(obj, event.body)
+                    onCompleteCallback(res);
+                    this.lastResult = event.body.toString();
                     // Close the progress-stream if we get an answer form the API
                     // The upload is complete
                     progress.complete();

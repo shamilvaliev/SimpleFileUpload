@@ -1,4 +1,4 @@
-﻿namespace SimpleFileUpload.ViewModels.Files
+﻿namespace SimpleFileUpload.Logic.ViewModels.Files
 {
     using System;
 
@@ -31,5 +31,10 @@
         /// File extension
         /// </summary>
         public string Ext { get; set; }
+        
+        /// <summary>
+        /// User id
+        /// </summary>
+        public int UserId { get; set; }
     }
 }

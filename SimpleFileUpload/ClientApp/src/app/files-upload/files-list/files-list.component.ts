@@ -8,7 +8,7 @@ import { FileInfo } from '../models/file-info';
 })
 export class FilesListComponent implements OnInit {
     @Input() files: FileInfo[] = [];
-    displayedColumns: string[] = ['no', 'name', 'size', 'date'];
+    displayedColumns: string[] = ['no', 'name', 'size', 'date', 'userName'];
   constructor() { }
 
   ngOnInit() {

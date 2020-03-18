@@ -14,5 +14,10 @@
         /// Ref to file
         /// </summary>
         public virtual FileModel File { get; set; }
+
+        /// <summary>
+        /// File bytes
+        /// </summary>
+        public byte[] Bytes { get; set; }
     }
 }

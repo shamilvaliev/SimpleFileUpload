@@ -1,16 +1,19 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SpaServices.AngularCli;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using SimpleFileUpload.Domain;
-
 namespace SimpleFileUpload
 {
+    using Microsoft.AspNetCore.Builder;
+    using Microsoft.AspNetCore.Hosting;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.SpaServices.AngularCli;
+    using Microsoft.EntityFrameworkCore;
+    using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.Hosting;
+    using SimpleFileUpload.Domain;
+    using SimpleFileUpload.Logic.Providers;
+
+    /// <summary>
+    /// Startup
+    /// </summary>
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -41,6 +44,8 @@ namespace SimpleFileUpload
                 // Advertise the API versions supported for the particular endpoint
                 config.ReportApiVersions = true;
             });
+
+            this.RegisterDependencies(services);
 
             services.AddDbContext<FileUploadContext>(options =>
             options.UseSqlServer(Configuration.GetConnectionString("DefaultConnectionString")));
@@ -90,6 +95,12 @@ namespace SimpleFileUpload
             });
 
             this.UpdateDatabase(app);
+        }
+
+        private void RegisterDependencies(IServiceCollection services)
+        {
+            services.AddScoped<IFileStorageProvider, FileStorageProvider>();
+            services.AddScoped<IUserStorageProvider, UserStorageProvider>();
         }
 
         private void UpdateDatabase(IApplicationBuilder app)

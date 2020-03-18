@@ -1,6 +1,7 @@
 import { Component, ViewChild, Output, EventEmitter } from '@angular/core';
 import { UploadService } from '../upload.service';
 import { forkJoin } from 'rxjs';
+import { FileUploadResult } from '../models/file-upload-result';
 
 @Component({
     selector: 'app-upload-input',
@@ -46,16 +47,20 @@ export class UploadInputComponent {
     }
     startUpload() {
         if (this.uploadSuccessful) {
-           
+            
+            //this.resetForm();
             return;
         }
 
         this.uploading = true;
 
-        this.progress = this.uploadService.upload(this.files);
+        this.progress = this.uploadService.upload(this.files, this.onCompleteUpload);
         console.log(this.progress);
         for (const key in this.progress) {
-            this.progress[key].progress.subscribe(val => console.log(val));
+            this.progress[key].progress.subscribe(val => {
+                console.log(val);
+            }
+            );
         }
 
         let allProgressObservables = [];
@@ -67,10 +72,14 @@ export class UploadInputComponent {
 
         forkJoin(allProgressObservables).subscribe(end => {
             this.uploadSuccessful = true;
-
+            console.log(this.uploadService.lastResult);
             this.uploading = false;
             this.onSuccessUploaded.emit(true);
             this.resetForm();
         });
+    }
+
+    onCompleteUpload(result: FileUploadResult[]) {
+        
     }
 }

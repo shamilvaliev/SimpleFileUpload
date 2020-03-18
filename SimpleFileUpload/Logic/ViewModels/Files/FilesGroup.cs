@@ -1,4 +1,4 @@
-﻿namespace SimpleFileUpload.ViewModels.Files
+﻿namespace SimpleFileUpload.Logic.ViewModels.Files
 {
     using System.Collections.Generic;
 

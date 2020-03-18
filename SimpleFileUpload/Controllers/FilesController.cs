@@ -2,12 +2,15 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Http;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Logging;
-    using SimpleFileUpload.ViewModels.Files;
+    using SimpleFileUpload.Logic.Providers;
+    using SimpleFileUpload.Logic.ViewModels;
+    using SimpleFileUpload.Logic.ViewModels.Files;
 
     /// <summary>
     /// Controller working with files
@@ -17,17 +20,19 @@
     [ApiVersion("1.0")]
     public class FilesController : ControllerBase
     {
-        private static List<FileInfo> savedFiles = new List<FileInfo>();
-
-        private readonly ILogger<FilesController> _logger;
+        private readonly ILogger<FilesController> logger;
+        private readonly IFileStorageProvider fileStorageProvider;
+        private readonly IUserStorageProvider userStorageProvider;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="logger">Logger</param>
-        public FilesController(ILogger<FilesController> logger)
+        public FilesController(ILogger<FilesController> logger, IFileStorageProvider fileStorageProvider, IUserStorageProvider userStorageProvider)
         {
-            _logger = logger;
+            this.logger = logger;
+            this.fileStorageProvider = fileStorageProvider;
+            this.userStorageProvider = userStorageProvider;
         }
 
         /// <summary>
@@ -35,9 +40,10 @@
         /// </summary>
         /// <returns>List of group files</returns>
         [HttpGet]
-        public List<FilesGroup> Get()
+        public async Task<List<FilesGroup>> Get()
         {
-            return savedFiles.GroupBy(t => t.Ext).Select(t => new FilesGroup { Name = t.Key, Files = t.ToList() }).ToList();
+
+            return await this.fileStorageProvider.GetAllFilesAsync();
         }
 
         /// <summary>
@@ -49,25 +55,35 @@
         public async Task<IActionResult> Post(List<IFormFile> files)
         {
             long size = files.Sum(f => f.Length);
+            var result = new List<OperationResult<Logic.ViewModels.Files.FileInfo>>();
+
+            // TODO: Implement logic users register/autorize
+            var user = await this.userStorageProvider.GetUserByToken(Guid.Empty.ToString());
+            if (user == null)
+            {
+                await this.userStorageProvider.AddUser(new Logic.ViewModels.Users.UserViewModel { Name = "Test user", Token = Guid.Empty.ToString() });
+                user = await this.userStorageProvider.GetUserByToken(Guid.Empty.ToString());
+            }
 
             foreach (var formFile in files)
             {
+                var fileInfo = new Logic.ViewModels.Files.FileInfo { Name = formFile.FileName, Size = formFile.Length, Date = DateTime.Now, UserName = string.Empty, Ext = Path.GetExtension(formFile.FileName), UserId = user.Id };
                 if (formFile.Length > 0)
                 {
-                    savedFiles.Add(new FileInfo { Name = formFile.FileName, Size = formFile.Length, Date = DateTime.Now, UserName = string.Empty, Ext = System.IO.Path.GetExtension(formFile.FileName) });
-                    //var filePath = Path.GetTempFileName();
-
-                    //using (var stream = System.IO.File.Create(filePath))
-                    //{
-                    //    await formFile.CopyToAsync(stream);
-                    //}
+                    using (var stream = new MemoryStream())
+                    {
+                        await formFile.CopyToAsync(stream);
+                        var saveResult = await this.fileStorageProvider.SaveAsync(fileInfo, stream.ToArray());
+                        result.Add(saveResult);
+                    }
+                }
+                else
+                {
+                    result.Add(new OperationResult<Logic.ViewModels.Files.FileInfo> { OperationResult = OperationResultEnum.Error, Message = "Attached zero size file", Result = fileInfo });
                 }
             }
 
-            // Process uploaded files
-            // Don't rely on or trust the FileName property without validation.
-
-            return Ok(new { count = files.Count, size });
+            return Ok(result);
         }
     }
 }
